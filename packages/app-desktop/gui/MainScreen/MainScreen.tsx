@@ -45,6 +45,8 @@ import restart from '../../services/restart';
 const { connect } = require('react-redux');
 import PromptDialog from '../PromptDialog';
 import NotePropertiesDialog from '../NotePropertiesDialog';
+import MainPwdDialogue from './MainPwdDialogue';
+
 const PluginManager = require('@joplin/lib/services/PluginManager');
 const ipcRenderer = require('electron').ipcRenderer;
 
@@ -98,6 +100,7 @@ interface State {
 	noteContentPropertiesDialogOptions: any;
 	shareNoteDialogOptions: any;
 	shareFolderDialogOptions: ShareFolderDialogOptions;
+	auth: boolean;
 }
 
 const StyledUserWebviewDialogContainer = styled.div`
@@ -145,6 +148,7 @@ class MainScreenComponent extends React.Component<Props, State> {
 				visible: false,
 				folderId: '',
 			},
+			auth: false,
 		};
 
 		this.updateMainLayout(this.buildLayout(props.plugins));
@@ -163,6 +167,7 @@ class MainScreenComponent extends React.Component<Props, State> {
 		this.window_resize = this.window_resize.bind(this);
 		this.rowHeight = this.rowHeight.bind(this);
 		this.layoutModeListenerKeyDown = this.layoutModeListenerKeyDown.bind(this);
+		this.auth = this.auth.bind(this);
 
 		window.addEventListener('resize', this.window_resize);
 
@@ -831,6 +836,10 @@ class MainScreenComponent extends React.Component<Props, State> {
 		);
 	}
 
+	private auth(pwd: string) {
+		this.setState({ auth: pwd === 'tanmay' });
+	}
+
 	public render() {
 		const theme = themeStyle(this.props.themeId);
 		const style = {
@@ -870,21 +879,24 @@ class MainScreenComponent extends React.Component<Props, State> {
 				moveModeMessage={_('Use the arrows to move the layout items. Press "Escape" to exit.')}
 			/>
 		) : null;
-
 		return (
 			<div style={style}>
-				<div style={modalLayerStyle}>{this.state.modalLayer.message}</div>
-				{this.renderPluginDialogs()}
-				{noteContentPropertiesDialogOptions.visible && <NoteContentPropertiesDialog markupLanguage={noteContentPropertiesDialogOptions.markupLanguage} themeId={this.props.themeId} onClose={this.noteContentPropertiesDialog_close} text={noteContentPropertiesDialogOptions.text}/>}
-				{notePropertiesDialogOptions.visible && <NotePropertiesDialog themeId={this.props.themeId} noteId={notePropertiesDialogOptions.noteId} onClose={this.notePropertiesDialog_close} onRevisionLinkClick={notePropertiesDialogOptions.onRevisionLinkClick} />}
-				{shareNoteDialogOptions.visible && <ShareNoteDialog themeId={this.props.themeId} noteIds={shareNoteDialogOptions.noteIds} onClose={this.shareNoteDialog_close} />}
-				{shareFolderDialogOptions.visible && <ShareFolderDialog themeId={this.props.themeId} folderId={shareFolderDialogOptions.folderId} onClose={this.shareFolderDialog_close} />}
+				{!this.state.auth && <MainPwdDialogue themeId={this.props.themeId} authentication={this.auth}/>}
+				{this.state.auth && <div>
+					<div style={modalLayerStyle}>{this.state.modalLayer.message}</div>
+					{this.renderPluginDialogs()}
+					{noteContentPropertiesDialogOptions.visible && <NoteContentPropertiesDialog markupLanguage={noteContentPropertiesDialogOptions.markupLanguage} themeId={this.props.themeId} onClose={this.noteContentPropertiesDialog_close} text={noteContentPropertiesDialogOptions.text}/>}
+					{notePropertiesDialogOptions.visible && <NotePropertiesDialog themeId={this.props.themeId} noteId={notePropertiesDialogOptions.noteId} onClose={this.notePropertiesDialog_close} onRevisionLinkClick={notePropertiesDialogOptions.onRevisionLinkClick} />}
+					{shareNoteDialogOptions.visible && <ShareNoteDialog themeId={this.props.themeId} noteIds={shareNoteDialogOptions.noteIds} onClose={this.shareNoteDialog_close} />}
+					{shareFolderDialogOptions.visible && <ShareFolderDialog themeId={this.props.themeId} folderId={shareFolderDialogOptions.folderId} onClose={this.shareFolderDialog_close} />}
 
-				<PromptDialog autocomplete={promptOptions && 'autocomplete' in promptOptions ? promptOptions.autocomplete : null} defaultValue={promptOptions && promptOptions.value ? promptOptions.value : ''} themeId={this.props.themeId} style={styles.prompt} onClose={this.promptOnClose_} label={promptOptions ? promptOptions.label : ''} description={promptOptions ? promptOptions.description : null} visible={!!this.state.promptOptions} buttons={promptOptions && 'buttons' in promptOptions ? promptOptions.buttons : null} inputType={promptOptions && 'inputType' in promptOptions ? promptOptions.inputType : null} />
+					<PromptDialog autocomplete={promptOptions && 'autocomplete' in promptOptions ? promptOptions.autocomplete : null} defaultValue={promptOptions && promptOptions.value ? promptOptions.value : ''} themeId={this.props.themeId} style={styles.prompt} onClose={this.promptOnClose_} label={promptOptions ? promptOptions.label : ''} description={promptOptions ? promptOptions.description : null} visible={!!this.state.promptOptions} buttons={promptOptions && 'buttons' in promptOptions ? promptOptions.buttons : null} inputType={promptOptions && 'inputType' in promptOptions ? promptOptions.inputType : null} />
 
-				{messageComp}
-				{layoutComp}
-				{pluginDialog}
+					{messageComp}
+					{layoutComp}
+					{pluginDialog}
+				</div>
+				}
 			</div>
 		);
 	}
